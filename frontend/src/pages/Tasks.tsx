@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { listProjects, listTasks, useApi } from '@/lib/api';
+import { Modal } from '@/components/ui/Modal';
+import { TaskForm } from '@/components/forms/TaskForm';
+import { createTask, listProjects, listTasks, useApi } from '@/lib/api';
 import type { Project, TaskPriority, TaskStatus } from '@/types';
 
 const statusLabel: Record<TaskStatus, string> = {
@@ -28,33 +31,43 @@ const priorityTone: Record<TaskPriority, 'slate' | 'amber' | 'red'> = {
 export function Tasks() {
   const tasks = useApi(listTasks);
   const projects = useApi(listProjects);
+  const [creating, setCreating] = useState(false);
 
   const loading = tasks.loading || projects.loading;
   const error = tasks.error ?? projects.error;
 
-  if (loading) {
-    return <p className="text-sm text-slate-500">Loading tasks…</p>;
-  }
-  if (error) {
-    return <p className="text-sm text-red-600">Failed to load tasks: {error.message}</p>;
-  }
-
   const items = tasks.data ?? [];
-  const projectsById = new Map<string, Project>((projects.data ?? []).map((p) => [p.id, p]));
+  const projectList = projects.data ?? [];
+  const projectsById = new Map<string, Project>(projectList.map((p) => [p.id, p]));
   const projectName = (id: string) => projectsById.get(id)?.name ?? '—';
 
   return (
     <>
       <PageHeader
         title="Tasks"
-        subtitle={`${items.length} tasks across all projects`}
+        subtitle={
+          loading
+            ? 'Loading tasks…'
+            : `${items.length} task${items.length === 1 ? '' : 's'} across all projects`
+        }
         actions={
-          <button className="btn-primary">
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="btn-primary"
+            disabled={loading}
+          >
             <Plus size={16} />
             New task
           </button>
         }
       />
+
+      {error && (
+        <p className="mb-4 text-sm text-red-600">
+          Failed to load tasks: {error.message}
+        </p>
+      )}
 
       <Card className="p-0">
         <div className="overflow-x-auto">
@@ -88,6 +101,18 @@ export function Tasks() {
           </table>
         </div>
       </Card>
+
+      <Modal open={creating} onClose={() => setCreating(false)} title="New task">
+        <TaskForm
+          projects={projectList}
+          onCancel={() => setCreating(false)}
+          onSubmit={async (task) => {
+            await createTask(task);
+            tasks.refetch();
+            setCreating(false);
+          }}
+        />
+      </Modal>
     </>
   );
 }
