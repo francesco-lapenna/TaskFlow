@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react';
-import type { Project, ProjectStatus } from '@/types';
+import { toIsoDateTime, type CreateProjectPayload } from '@/lib/api';
+import type { ProjectStatus } from '@/types';
 
 interface ProjectFormProps {
-  onSubmit: (project: Project) => Promise<void>;
+  onSubmit: (project: CreateProjectPayload) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -21,16 +22,21 @@ export function ProjectForm({ onSubmit, onCancel }: ProjectFormProps) {
     if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
+
+    const payload: CreateProjectPayload = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      status,
+      progress: 0,
+      membersCount: 0,
+    };
+    const trimmedDescription = description.trim();
+    if (trimmedDescription) payload.description = trimmedDescription;
+    const isoDue = toIsoDateTime(dueDate);
+    if (isoDue) payload.dueDate = isoDue;
+
     try {
-      await onSubmit({
-        id: crypto.randomUUID(),
-        name: name.trim(),
-        description: description.trim() || undefined,
-        status,
-        progress: 0,
-        membersCount: 0,
-        dueDate: dueDate || undefined,
-      });
+      await onSubmit(payload);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setSubmitting(false);
