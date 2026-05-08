@@ -1,4 +1,5 @@
-import { Entity, model, property } from '@loopback/repository';
+import { belongsTo, Entity, model, property } from '@loopback/repository';
+import { Project } from './project.model';
 
 @model({ settings: { strict: true } })
 export class Task extends Entity {
@@ -10,7 +11,7 @@ export class Task extends Entity {
   })
   id: string;
 
-  @property({ type: 'string', required: true })
+  @belongsTo(() => Project, { name: 'project' }, { required: true })
   projectId: string;
 
   @property({ type: 'string', required: true })
@@ -49,4 +50,8 @@ export class Task extends Entity {
   }
 }
 
-export type TaskWithRelations = Task;
+export interface TaskRelations {
+  project?: Project;
+}
+
+export type TaskWithRelations = Task & TaskRelations;
