@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { mockProjects } from '@/data/mock';
+import { listProjects, useApi } from '@/lib/api';
 import type { ProjectStatus } from '@/types';
 
 const statusTone: Record<ProjectStatus, 'blue' | 'amber' | 'green' | 'slate'> = {
@@ -14,11 +14,21 @@ const statusTone: Record<ProjectStatus, 'blue' | 'amber' | 'green' | 'slate'> = 
 };
 
 export function Projects() {
+  const { data: projects, error, loading } = useApi(listProjects);
+
+  if (loading) {
+    return <p className="text-sm text-slate-500">Loading projects…</p>;
+  }
+  if (error) {
+    return <p className="text-sm text-red-600">Failed to load projects: {error.message}</p>;
+  }
+  const items = projects ?? [];
+
   return (
     <>
       <PageHeader
         title="Projects"
-        subtitle={`${mockProjects.length} projects across the team`}
+        subtitle={`${items.length} projects across the team`}
         actions={
           <button className="btn-primary">
             <Plus size={16} />
@@ -28,7 +38,7 @@ export function Projects() {
       />
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {mockProjects.map((p) => (
+        {items.map((p) => (
           <Card key={p.id} className="flex flex-col">
             <div className="flex items-start justify-between gap-3">
               <h3 className="text-base font-semibold text-slate-900">{p.name}</h3>
