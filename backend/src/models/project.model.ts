@@ -1,4 +1,5 @@
-import { Entity, model, property } from '@loopback/repository';
+import { Entity, hasMany, model, property } from '@loopback/repository';
+import { Task } from './task.model';
 
 @model({ settings: { strict: true } })
 export class Project extends Entity {
@@ -36,9 +37,16 @@ export class Project extends Entity {
   @property({ type: 'date', defaultFn: 'now' })
   createdAt?: Date;
 
+  @hasMany(() => Task, { keyTo: 'projectId' })
+  tasks?: Task[];
+
   constructor(data?: Partial<Project>) {
     super(data);
   }
 }
 
-export type ProjectWithRelations = Project;
+export interface ProjectRelations {
+  tasks?: Task[];
+}
+
+export type ProjectWithRelations = Project & ProjectRelations;
