@@ -4,7 +4,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { mockProjects, mockTasks } from '@/data/mock';
+import { listProjects, listTasks, useApi } from '@/lib/api';
 
 const statusTone = {
   active: 'blue',
@@ -14,10 +14,26 @@ const statusTone = {
 } as const;
 
 export function Dashboard() {
-  const activeProjects = mockProjects.filter((p) => p.status === 'active').length;
-  const openTasks = mockTasks.filter((t) => t.status !== 'done').length;
-  const completedTasks = mockTasks.filter((t) => t.status === 'done').length;
-  const teamSize = new Set(mockTasks.map((t) => t.assignee).filter(Boolean)).size;
+  const projects = useApi(listProjects);
+  const tasks = useApi(listTasks);
+
+  const loading = projects.loading || tasks.loading;
+  const error = projects.error ?? tasks.error;
+
+  if (loading) {
+    return <p className="text-sm text-slate-500">Loading dashboard…</p>;
+  }
+  if (error) {
+    return <p className="text-sm text-red-600">Failed to load dashboard: {error.message}</p>;
+  }
+
+  const projectList = projects.data ?? [];
+  const taskList = tasks.data ?? [];
+
+  const activeProjects = projectList.filter((p) => p.status === 'active').length;
+  const openTasks = taskList.filter((t) => t.status !== 'done').length;
+  const completedTasks = taskList.filter((t) => t.status === 'done').length;
+  const teamSize = new Set(taskList.map((t) => t.assignee).filter(Boolean)).size;
 
   return (
     <>
@@ -34,7 +50,7 @@ export function Dashboard() {
         <Card className="lg:col-span-2">
           <CardHeader title="Recent projects" />
           <ul className="divide-y divide-slate-100">
-            {mockProjects.slice(0, 4).map((p) => (
+            {projectList.slice(0, 4).map((p) => (
               <li key={p.id} className="flex items-center gap-4 py-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -55,7 +71,7 @@ export function Dashboard() {
         <Card>
           <CardHeader title="Up next" />
           <ul className="space-y-3">
-            {mockTasks
+            {taskList
               .filter((t) => t.status !== 'done')
               .slice(0, 5)
               .map((t) => (
