@@ -1,7 +1,46 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Project, Task } from '@/types';
+import type { Project, ProjectStatus, Task, TaskPriority, TaskStatus } from '@/types';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+
+interface LoopbackErrorBody {
+  error?: {
+    message?: string;
+    code?: string;
+    details?: Array<{ path?: string; message?: string; code?: string }>;
+  };
+}
+
+export class ApiError extends Error {
+  status: number;
+  details?: NonNullable<LoopbackErrorBody['error']>['details'];
+  constructor(status: number, message: string, details?: NonNullable<LoopbackErrorBody['error']>['details']) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.details = details;
+  }
+}
+
+async function buildError(res: Response, path: string): Promise<ApiError> {
+  let body: LoopbackErrorBody | undefined;
+  try {
+    body = (await res.json()) as LoopbackErrorBody;
+  } catch {
+    // body wasn't JSON; fall through with no detail
+  }
+  const err = body?.error;
+  const fields =
+    err?.details
+      ?.map((d) => [d.path, d.message].filter(Boolean).join(' '))
+      .filter(Boolean)
+      .join('; ') ?? '';
+  const summary = [err?.message, fields && `(${fields})`].filter(Boolean).join(' ');
+  const message = summary
+    ? `API ${res.status} on ${path}: ${summary}`
+    : `API ${res.status} on ${path}`;
+  return new ApiError(res.status, message, err?.details);
+}
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -9,7 +48,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   if (!res.ok) {
-    throw new Error(`API ${res.status} on ${path}`);
+    throw await buildError(res, path);
   }
   return res.json() as Promise<T>;
 }
@@ -19,11 +58,40 @@ export const listTasks = () => api<Task[]>('/tasks');
 export const listTasksForProject = (projectId: string) =>
   api<Task[]>(`/projects/${projectId}/tasks`);
 
-export const createProject = (project: Project) =>
-  api<Project>('/projects', { method: 'POST', body: JSON.stringify(project) });
+export interface CreateProjectPayload {
+  id: string;
+  name: string;
+  description?: string;
+  status: ProjectStatus;
+  progress: number;
+  membersCount: number;
+  dueDate?: string; // ISO 8601 date-time
+}
 
-export const createTask = (task: Task) =>
-  api<Task>('/tasks', { method: 'POST', body: JSON.stringify(task) });
+export interface CreateTaskPayload {
+  id: string;
+  projectId: string;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assignee?: string;
+  dueDate?: string; // ISO 8601 date-time
+}
+
+export const createProject = (payload: CreateProjectPayload) =>
+  api<Project>('/projects', { method: 'POST', body: JSON.stringify(payload) });
+
+export const createTask = (payload: CreateTaskPayload) =>
+  api<Task>('/tasks', { method: 'POST', body: JSON.stringify(payload) });
+
+/** Convert an HTML <input type="date"> value (YYYY-MM-DD) to an ISO 8601
+ *  date-time string at UTC midnight, suitable for LoopBack `type: 'date'`. */
+export function toIsoDateTime(htmlDate: string): string | undefined {
+  if (!htmlDate) return undefined;
+  const d = new Date(htmlDate);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+}
 
 export interface ApiState<T> {
   data: T | null;

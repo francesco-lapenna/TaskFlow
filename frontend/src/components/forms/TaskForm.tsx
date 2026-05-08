@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import type { Project, Task, TaskPriority, TaskStatus } from '@/types';
+import { toIsoDateTime, type CreateTaskPayload } from '@/lib/api';
+import type { Project, TaskPriority, TaskStatus } from '@/types';
 
 interface TaskFormProps {
   projects: Project[];
   defaultProjectId?: string;
-  onSubmit: (task: Task) => Promise<void>;
+  onSubmit: (task: CreateTaskPayload) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -25,16 +26,21 @@ export function TaskForm({ projects, defaultProjectId, onSubmit, onCancel }: Tas
     if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
+
+    const payload: CreateTaskPayload = {
+      id: crypto.randomUUID(),
+      projectId,
+      title: title.trim(),
+      status,
+      priority,
+    };
+    const trimmedAssignee = assignee.trim();
+    if (trimmedAssignee) payload.assignee = trimmedAssignee;
+    const isoDue = toIsoDateTime(dueDate);
+    if (isoDue) payload.dueDate = isoDue;
+
     try {
-      await onSubmit({
-        id: crypto.randomUUID(),
-        projectId,
-        title: title.trim(),
-        status,
-        priority,
-        assignee: assignee.trim() || undefined,
-        dueDate: dueDate || undefined,
-      });
+      await onSubmit(payload);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setSubmitting(false);
