@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { Project, Task } from '@/types';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -19,16 +19,24 @@ export const listTasks = () => api<Task[]>('/tasks');
 export const listTasksForProject = (projectId: string) =>
   api<Task[]>(`/projects/${projectId}/tasks`);
 
+export const createProject = (project: Project) =>
+  api<Project>('/projects', { method: 'POST', body: JSON.stringify(project) });
+
+export const createTask = (task: Task) =>
+  api<Task>('/tasks', { method: 'POST', body: JSON.stringify(task) });
+
 export interface ApiState<T> {
   data: T | null;
   error: Error | null;
   loading: boolean;
+  refetch: () => void;
 }
 
 export function useApi<T>(fetcher: () => Promise<T>, deps: unknown[] = []): ApiState<T> {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reloadIdx, setReloadIdx] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,7 +56,9 @@ export function useApi<T>(fetcher: () => Promise<T>, deps: unknown[] = []): ApiS
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, reloadIdx]);
 
-  return { data, error, loading };
+  const refetch = useCallback(() => setReloadIdx((i) => i + 1), []);
+
+  return { data, error, loading, refetch };
 }
