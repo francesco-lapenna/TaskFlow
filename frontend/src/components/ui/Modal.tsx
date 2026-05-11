@@ -34,7 +34,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         className="card relative z-10 w-full max-w-md p-5"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
           <button
             type="button"
             onClick={onClose}

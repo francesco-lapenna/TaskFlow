@@ -60,7 +60,7 @@ export function Projects() {
       />
 
       {error && (
-        <p className="mb-4 text-sm text-red-600">
+        <p className="mb-4 text-sm text-red-600 dark:text-red-400">
           Failed to load projects: {error.message}
         </p>
       )}
@@ -69,22 +69,22 @@ export function Projects() {
         {items.map((p) => (
           <Card key={p.id} className="flex flex-col">
             <div className="flex items-start justify-between gap-3">
-              <h3 className="text-base font-semibold text-slate-900">{p.name}</h3>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{p.name}</h3>
               <Badge tone={statusTone[p.status]}>{p.status.replace('_', ' ')}</Badge>
             </div>
-            <p className="mt-2 line-clamp-2 text-sm text-slate-500">{p.description}</p>
+            <p className="mt-2 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{p.description}</p>
 
             <div className="mt-4">
-              <div className="flex items-center justify-between text-xs text-slate-500">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                 <span>Progress</span>
-                <span className="font-medium text-slate-700">{p.progress}%</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">{p.progress}%</span>
               </div>
               <div className="mt-1.5">
                 <ProgressBar value={p.progress} />
               </div>
             </div>
 
-            <div className="mt-5 flex items-center justify-between text-xs text-slate-500">
+            <div className="mt-5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span className="inline-flex items-center gap-1.5">
                 <Users size={14} />
                 {p.membersCount} members
