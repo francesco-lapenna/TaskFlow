@@ -16,7 +16,7 @@ export function Card({ children, className, ...rest }: CardProps) {
 export function CardHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
     <div className="mb-4 flex items-center justify-between">
-      <h3 className="text-sm font-semibold text-slate-700">{title}</h3>
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{title}</h3>
       {action}
     </div>
   );
