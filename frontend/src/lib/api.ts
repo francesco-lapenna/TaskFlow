@@ -58,6 +58,24 @@ export const listTasks = () => api<Task[]>('/tasks');
 export const listTasksForProject = (projectId: string) =>
   api<Task[]>(`/projects/${projectId}/tasks`);
 
+export const searchProjects = (query: string) => {
+  const ilike = `%${query}%`;
+  const filter = JSON.stringify({
+    where: { or: [{ name: { ilike } }, { description: { ilike } }] },
+    limit: 50,
+  });
+  return api<Project[]>(`/projects?filter=${encodeURIComponent(filter)}`);
+};
+
+export const searchTasks = (query: string) => {
+  const ilike = `%${query}%`;
+  const filter = JSON.stringify({
+    where: { or: [{ title: { ilike } }, { description: { ilike } }] },
+    limit: 50,
+  });
+  return api<Task[]>(`/tasks?filter=${encodeURIComponent(filter)}`);
+};
+
 export interface CreateProjectPayload {
   id: string;
   name: string;
