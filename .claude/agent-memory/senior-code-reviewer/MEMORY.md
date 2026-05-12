@@ -1,0 +1,2 @@
+- [Tracked vite.config build artifacts](project_vite_build_artifacts.md) — vite.config.js and vite.config.d.ts are TS build outputs that should be gitignored, not committed
+- [Frontend Type drift watch](feedback_type_drift_watch.md) — when a backend model changes, also update frontend/src/types/index.ts and lib/api.ts payloads (no codegen)
